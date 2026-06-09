@@ -1,0 +1,19 @@
+project: kiro
+
+path: /home/ubuntu/project
+
+backends:
+  lxd:
+    systems:
+      - ubuntu-24.04:
+          username: ubuntu
+          vm: true
+
+suites:
+  main/:
+    summary: Test the kiro SDK inside workshops with different bases
+    environment:
+      BASE/jammy: ubuntu@22.04
+      BASE/noble: ubuntu@24.04
+      BASE/resolute: ubuntu@26.04
+      EXPECTED_VERSION: '$(HOST: curl -fsSL https://prod.download.cli.kiro.dev/stable/latest/manifest.json | jq -r .version)'

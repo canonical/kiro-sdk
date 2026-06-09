@@ -1,0 +1,18 @@
+summary: setup-project hook installs the workshop prompt for Kiro
+
+prepare: |
+  envsubst '${BASE}' <workshop.yaml.in >workshop.yaml
+  workshop launch
+
+restore: |
+  workshop remove || true
+
+execute: |
+  # setup-project installs the workshop prompt as ~/.kiro/workshop-prompt.md
+  workshop exec -- test -f /home/workshop/.kiro/workshop-prompt.md
+  workshop exec -- head -1 /home/workshop/.kiro/workshop-prompt.md | \
+    MATCH "Workshop Container Environment Instructions"
+
+debug: |
+  workshop exec -- ls -la /home/workshop/.kiro/ || true
+  workshop exec -- cat /home/workshop/.kiro/workshop-prompt.md || true

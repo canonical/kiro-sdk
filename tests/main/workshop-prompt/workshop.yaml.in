@@ -1,0 +1,4 @@
+name: test-kiro
+base: ${BASE}
+sdks:
+  - name: try-kiro

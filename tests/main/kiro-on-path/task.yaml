@@ -1,0 +1,19 @@
+summary: kiro-cli is on $PATH inside the workshop
+
+prepare: |
+  envsubst '${BASE}' <workshop.yaml.in >workshop.yaml
+  workshop launch
+
+restore: |
+  workshop remove || true
+
+execute: |
+  # `workshop exec` runs as the `workshop` user with a login shell,
+  # which is what setup-base configures via /etc/profile.d/kiro-sdk.sh.
+  workshop exec -- bash -lc 'command -v kiro-cli' | MATCH "/kiro-cli$"
+  workshop exec -- bash -lc 'command -v kiro-cli-chat' | MATCH "/kiro-cli-chat$"
+  workshop exec -- bash -lc 'command -v kiro-cli-term' | MATCH "/kiro-cli-term$"
+
+debug: |
+  workshop exec -- bash -lc 'echo PATH=$PATH' || true
+  workshop exec -- bash -lc 'ls -l /etc/profile.d/kiro-sdk.sh' || true

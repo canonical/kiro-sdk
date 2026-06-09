@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+
+mkdir -p /home/workshop/.kiro
+
+# Conditionally write workshop-prompt.md — do not overwrite if user already has one
+if [[ ! -f "/home/workshop/.kiro/workshop-prompt.md" ]]; then
+    cp "${SDK}/workshop-prompt.md" "/home/workshop/.kiro/workshop-prompt.md"
+elif ! grep -Fq "$(head -1 "${SDK}/workshop-prompt.md")" "/home/workshop/.kiro/workshop-prompt.md"; then
+    printf '\n' >> "/home/workshop/.kiro/workshop-prompt.md"
+    cat "${SDK}/workshop-prompt.md" >> "/home/workshop/.kiro/workshop-prompt.md"
+fi
+
+# Ensure workshop user owns the configuration files
+chown -R workshop:workshop /home/workshop/.kiro || true

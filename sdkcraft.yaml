@@ -1,0 +1,83 @@
+name: kiro
+title: Kiro SDK
+adopt-info: kiro
+summary: Kiro AI CLI tools
+description: |
+  This SDK provides the Kiro CLI for AI-assisted coding within a
+  workshop. The agent is sandboxed in the workshop container. Credentials are
+  persisted between workshop updates.
+license: https://kiro.dev/license/
+build-base: ubuntu@24.04
+platforms:
+  amd64:
+    build-on: [amd64, arm64]
+    build-for: [amd64]
+  arm64:
+    build-on: [amd64, arm64]
+    build-for: [arm64]
+
+plugs:
+  kiro-config:
+    interface: mount
+    workshop-target: /home/workshop/.kiro
+
+parts:
+  kiro:
+    plugin: nil
+    build-packages:
+      - curl
+      - ca-certificates
+      - jq
+    override-pull: |
+      MANIFEST_URL="https://prod.download.cli.kiro.dev/stable/latest/manifest.json"
+      echo "Fetching Kiro CLI manifest..."
+      MANIFEST="$(curl -fsSL "$MANIFEST_URL")"
+      VERSION="$(echo "$MANIFEST" | jq -r ".version")"
+      craftctl set version="$VERSION"
+
+      # Determine download package filename from manifest based on architecture
+      # We want the linux tar.xz package for headless variant
+      case "$CRAFT_ARCH_BUILD_FOR" in
+        amd64) ARCH_NAME="x86_64" ;;
+        arm64) ARCH_NAME="aarch64" ;;
+        *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR" >&2; exit 1 ;;
+      esac
+
+      echo "Matching package in manifest for $ARCH_NAME..."
+      # Extract package entry matching targetTriple, and fileType: tar.xz
+      PACKAGE_ENTRY=$(echo "$MANIFEST" | jq -r ".packages[] | select(.targetTriple == \"${ARCH_NAME}-unknown-linux-gnu\" and .fileType == \"tarXz\")")
+      if [ -z "$PACKAGE_ENTRY" ]; then
+        echo "Could not find tar.xz package for $ARCH_NAME in manifest" >&2
+        exit 1
+      fi
+
+      DOWNLOAD_PATH=$(echo "$PACKAGE_ENTRY" | jq -r ".download")
+      CHECKSUM=$(echo "$PACKAGE_ENTRY" | jq -r ".sha256")
+      DOWNLOAD_URL="https://prod.download.cli.kiro.dev/stable/$DOWNLOAD_PATH"
+
+      echo "Downloading $DOWNLOAD_URL..."
+      curl -fsSL -o "$CRAFT_PART_SRC/kirocli.tar.xz" "$DOWNLOAD_URL"
+
+      echo "Verifying checksum..."
+      ACTUAL="$(sha256sum "$CRAFT_PART_SRC/kirocli.tar.xz" | cut -d' ' -f1)"
+      if [ "$ACTUAL" != "$CHECKSUM" ]; then
+        echo "Checksum mismatch!" >&2
+        echo "  expected: $CHECKSUM" >&2
+        echo "  actual:   $ACTUAL" >&2
+        rm -f "$CRAFT_PART_SRC/kirocli.tar.xz"
+        exit 1
+      fi
+      echo "Checksum OK."
+
+      echo "Extracting archive..."
+      tar -xf "$CRAFT_PART_SRC/kirocli.tar.xz" -C "$CRAFT_PART_SRC"
+    override-build: |
+      # Install Kiro CLI binaries
+      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli" "$CRAFT_PRIME/bin/kiro-cli"
+      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli-chat" "$CRAFT_PRIME/bin/kiro-cli-chat"
+      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli-term" "$CRAFT_PRIME/bin/kiro-cli-term"
+
+  workshop-prompt:
+    plugin: dump
+    source: workshop-prompt.md
+    source-type: file

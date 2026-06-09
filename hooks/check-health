@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+if [[ ! -f "${SDK}/bin/kiro-cli" ]]; then
+  workshopctl set-health --code="kiro-not-installed" error "Kiro CLI not installed."
+  exit 0
+fi
+
+if ! sudo -u workshop --login which kiro-cli >/dev/null 2>&1; then
+  workshopctl set-health --code="kiro-not-on-path" error "Kiro CLI not available on the \$PATH."
+  exit 0
+fi
+
+workshopctl set-health okay

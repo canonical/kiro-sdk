@@ -1,0 +1,8 @@
+# sdkcraft build artifacts
+*.sdk
+
+# spread reuse state (created when a previous run leaves instances around)
+.spread-reuse.yaml
+
+# workshop lock files
+.workshop.lock
