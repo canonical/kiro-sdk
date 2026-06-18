@@ -100,10 +100,9 @@ All contributions, including code, documentation updates, and issue reports, are
 
 ## License and copyright
 
-Copyright 2026 Canonical Ltd.
+Copyright 2026 Canonical Ltd. and its affiliates. All rights reserved.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the [GNU Lesser General Public License version 2.1 (LGPLv2.1)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) as published by the Free Software Foundation.
+Kiro CLI and SDK are licensed under the proprietary [Kiro License Agreement](https://kiro.dev/license/).
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+Neither you nor any End User will, or will attempt to (a) modify, distribute, alter, tamper with, repair, or otherwise create derivative works of any Content included in the Services or AWS Content (except to the extent such Content is provided to you under a separate license that expressly permits the creation of derivative works).
 
-[Kiro CLI](https://kiro.dev) is licensed under the proprietary [Kiro License Agreement](https://kiro.dev/license/).

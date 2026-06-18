@@ -1,0 +1,14 @@
+# TODO
+
+- [x] the repo could be renamed to just kiro-sdk, for consistency with other SDKs
+- [x] our SDKs have a main branch for development, then separate branches for automated uploading and publishing. Your repo has .github/workflows/upload.yml which only activates on pushes to the latest branch, but there is no latest branch.
+- [x] the license field should ideally follow SPDX rather than being a URL (but I'm not sure this license has an SPDX ID or if it even allows for redistribution)
+- [x] the sdkcraft.yaml always downloads the latest version. Usually we try to download a specific version and use renovate to keep it up to date. 
+- [x] The sha256 or something equivalent should be part of the sdkcraft.yaml if possible as well.
+- [x] the setup-base hook adds ${SDK}/usr/bin to the PATH; it looks like the Store is down at the moment, so I can't check the contents of the SDK, but if there are files in usr/bin they should be moved to bin. /usr is a top-level directory and does not make sense to add to an SDK
+- [x] again I can't check the contents of the SDK, but I noticed it uses build-base with no base. this is reserved for SDKs which don't link against glibc. Given that the downloads are different per-architecture, I think it's unlikely that kiro doesn't depend on glibc
+IANAL but I do see this in the license:
+
+Neither you nor any End User will, or will attempt to (a) modify, distribute, alter, tamper with, repair, or otherwise create derivative works of any Content included in the Services or AWS Content (except to the extent such Content is provided to you under a separate license that expressly permits the creation of derivative works)
+
+- [x] the SDK doesn't have a usr directory so you can remove it from the PATH.

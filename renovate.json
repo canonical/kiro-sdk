@@ -2,5 +2,44 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "enabledManagers": [
+    "custom.regex"
+  ],
+  "customDatasources": {
+    "kiro-stable": {
+      "defaultRegistryUrlTemplate": "https://prod.download.cli.kiro.dev/stable/latest/manifest.json",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": version}]}"
+      ]
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^VERSION$/"
+      ],
+      "matchStrings": [
+        "(?<currentValue>[0-9.]+)"
+      ],
+      "depNameTemplate": "kiro",
+      "datasourceTemplate": "custom.kiro-stable",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "baseBranchPatterns": [
+    "latest"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "kiro"
+      ],
+      "matchBaseBranches": [
+        "latest"
+      ]
+    }
   ]
 }

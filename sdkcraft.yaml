@@ -6,7 +6,8 @@ description: |
   This SDK provides the Kiro CLI for AI-assisted coding within a
   workshop. The agent is sandboxed in the workshop container. Credentials are
   persisted between workshop updates.
-license: https://kiro.dev/license/
+license: Proprietary
+base: ubuntu@24.04
 build-base: ubuntu@24.04
 platforms:
   amd64:
@@ -29,13 +30,10 @@ parts:
       - ca-certificates
       - jq
     override-pull: |
-      MANIFEST_URL="https://prod.download.cli.kiro.dev/stable/latest/manifest.json"
-      echo "Fetching Kiro CLI manifest..."
-      MANIFEST="$(curl -fsSL "$MANIFEST_URL")"
-      VERSION="$(echo "$MANIFEST" | jq -r ".version")"
+      VERSION="$(cat "$CRAFT_PROJECT_DIR/VERSION")"
       craftctl set version="$VERSION"
 
-      # Determine download package filename from manifest based on architecture
+      # Determine download package filename based on architecture
       # We want the linux tar.xz package for headless variant
       case "$CRAFT_ARCH_BUILD_FOR" in
         amd64) ARCH_NAME="x86_64" ;;
@@ -43,17 +41,16 @@ parts:
         *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR" >&2; exit 1 ;;
       esac
 
-      echo "Matching package in manifest for $ARCH_NAME..."
-      # Extract package entry matching targetTriple, and fileType: tar.xz
-      PACKAGE_ENTRY=$(echo "$MANIFEST" | jq -r ".packages[] | select(.targetTriple == \"${ARCH_NAME}-unknown-linux-gnu\" and .fileType == \"tarXz\")")
-      if [ -z "$PACKAGE_ENTRY" ]; then
-        echo "Could not find tar.xz package for $ARCH_NAME in manifest" >&2
+      DOWNLOAD_URL="https://prod.download.cli.kiro.dev/stable/${VERSION}/kirocli-${ARCH_NAME}-linux.tar.xz"
+      CHECKSUM_URL="${DOWNLOAD_URL}.sha256"
+
+      echo "Fetching checksum from $CHECKSUM_URL..."
+      CHECKSUM="$(curl -fsSL "$CHECKSUM_URL" | cut -d' ' -f1)"
+
+      if ! echo "$CHECKSUM" | grep -qE '^[a-f0-9]{64}$'; then
+        echo "Invalid or missing checksum for version $VERSION ($ARCH_NAME)" >&2
         exit 1
       fi
-
-      DOWNLOAD_PATH=$(echo "$PACKAGE_ENTRY" | jq -r ".download")
-      CHECKSUM=$(echo "$PACKAGE_ENTRY" | jq -r ".sha256")
-      DOWNLOAD_URL="https://prod.download.cli.kiro.dev/stable/$DOWNLOAD_PATH"
 
       echo "Downloading $DOWNLOAD_URL..."
       curl -fsSL -o "$CRAFT_PART_SRC/kirocli.tar.xz" "$DOWNLOAD_URL"
