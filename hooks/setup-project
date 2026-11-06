@@ -1,14 +1,31 @@
 #!/usr/bin/bash
 
-mkdir -p /home/workshop/.kiro
+KIRO_DIR="/home/workshop/.kiro"
+# Kiro only loads global steering files from ~/.kiro/steering/.
+STEERING_DIR="${KIRO_DIR}/steering"
+PROMPT="${STEERING_DIR}/workshop-prompt.md"
+# Earlier revisions of this SDK installed the prompt directly in ~/.kiro,
+# where Kiro never reads it.
+LEGACY_PROMPT="${KIRO_DIR}/workshop-prompt.md"
 
-# Conditionally write workshop-prompt.md — do not overwrite if user already has one
-if [[ ! -f "/home/workshop/.kiro/workshop-prompt.md" ]]; then
-    cp "${SDK}/workshop-prompt.md" "/home/workshop/.kiro/workshop-prompt.md"
-elif ! grep -Fq "$(head -1 "${SDK}/workshop-prompt.md")" "/home/workshop/.kiro/workshop-prompt.md"; then
-    printf '\n' >> "/home/workshop/.kiro/workshop-prompt.md"
-    cat "${SDK}/workshop-prompt.md" >> "/home/workshop/.kiro/workshop-prompt.md"
+# Kiro stores its login tokens and local database here (kiro-data plug).
+DATA_DIR="/home/workshop/.local/share/kiro-cli"
+
+mkdir -p "${STEERING_DIR}" "${DATA_DIR}"
+
+if [[ -f "${LEGACY_PROMPT}" && ! -e "${PROMPT}" ]]; then
+    mv "${LEGACY_PROMPT}" "${PROMPT}"
 fi
 
-# Ensure workshop user owns the configuration files
-chown -R workshop:workshop /home/workshop/.kiro || true
+# Conditionally write workshop-prompt.md — do not overwrite if user already has one
+if [[ ! -f "${PROMPT}" ]]; then
+    cp "${SDK}/workshop-prompt.md" "${PROMPT}"
+elif ! grep -Fq "$(head -1 "${SDK}/workshop-prompt.md")" "${PROMPT}"; then
+    printf '\n' >> "${PROMPT}"
+    cat "${SDK}/workshop-prompt.md" >> "${PROMPT}"
+fi
+
+# Ensure workshop user owns the configuration and data files, and the
+# parents of the data mount, which may have been created by root.
+chown workshop:workshop /home/workshop/.local /home/workshop/.local/share || true
+chown -R workshop:workshop "${KIRO_DIR}" "${DATA_DIR}" || true
