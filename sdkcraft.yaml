@@ -21,6 +21,10 @@ plugs:
   kiro-config:
     interface: mount
     workshop-target: /home/workshop/.kiro
+  # Kiro keeps its login tokens and local database here, outside ~/.kiro.
+  kiro-data:
+    interface: mount
+    workshop-target: /home/workshop/.local/share/kiro-cli
 
 parts:
   kiro:
@@ -33,15 +37,16 @@ parts:
       VERSION="$(cat "$CRAFT_PROJECT_DIR/VERSION")"
       craftctl set version="$VERSION"
 
-      # Determine download package filename based on architecture
-      # We want the linux tar.xz package for headless variant
+      # Determine download package filename based on architecture.
+      # We want the glibc (non-musl) headless linux tar.gz package; Kiro 3.x
+      # no longer publishes the tar.xz archive that 2.x shipped.
       case "$CRAFT_ARCH_BUILD_FOR" in
         amd64) ARCH_NAME="x86_64" ;;
         arm64) ARCH_NAME="aarch64" ;;
         *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR" >&2; exit 1 ;;
       esac
 
-      DOWNLOAD_URL="https://prod.download.cli.kiro.dev/stable/${VERSION}/kirocli-${ARCH_NAME}-linux.tar.xz"
+      DOWNLOAD_URL="https://prod.download.cli.kiro.dev/stable/${VERSION}/kirocli-${ARCH_NAME}-linux.tar.gz"
       CHECKSUM_URL="${DOWNLOAD_URL}.sha256"
 
       echo "Fetching checksum from $CHECKSUM_URL..."
@@ -53,26 +58,27 @@ parts:
       fi
 
       echo "Downloading $DOWNLOAD_URL..."
-      curl -fsSL -o "$CRAFT_PART_SRC/kirocli.tar.xz" "$DOWNLOAD_URL"
+      curl -fsSL -o "$CRAFT_PART_SRC/kirocli.tar.gz" "$DOWNLOAD_URL"
 
       echo "Verifying checksum..."
-      ACTUAL="$(sha256sum "$CRAFT_PART_SRC/kirocli.tar.xz" | cut -d' ' -f1)"
+      ACTUAL="$(sha256sum "$CRAFT_PART_SRC/kirocli.tar.gz" | cut -d' ' -f1)"
       if [ "$ACTUAL" != "$CHECKSUM" ]; then
         echo "Checksum mismatch!" >&2
         echo "  expected: $CHECKSUM" >&2
         echo "  actual:   $ACTUAL" >&2
-        rm -f "$CRAFT_PART_SRC/kirocli.tar.xz"
+        rm -f "$CRAFT_PART_SRC/kirocli.tar.gz"
         exit 1
       fi
       echo "Checksum OK."
 
       echo "Extracting archive..."
-      tar -xf "$CRAFT_PART_SRC/kirocli.tar.xz" -C "$CRAFT_PART_SRC"
+      tar -xf "$CRAFT_PART_SRC/kirocli.tar.gz" -C "$CRAFT_PART_SRC"
     override-build: |
-      # Install Kiro CLI binaries
-      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli" "$CRAFT_PRIME/bin/kiro-cli"
-      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli-chat" "$CRAFT_PRIME/bin/kiro-cli-chat"
-      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli-term" "$CRAFT_PRIME/bin/kiro-cli-term"
+      # Kiro 3.x ships a single self-contained binary; the separate
+      # kiro-cli-chat and kiro-cli-term binaries from 2.x are gone.
+      # Install into the part's install dir (not straight into prime) so the
+      # lifecycle tracks the files and stale ones never leak into the SDK.
+      install -Dm755 "$CRAFT_PART_SRC/kirocli/bin/kiro-cli" "$CRAFT_PART_INSTALL/bin/kiro-cli"
 
   workshop-prompt:
     plugin: dump

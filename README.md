@@ -1,6 +1,6 @@
 # Kiro SDK for Workshop
 
-This SDK provides the Kiro CLI for AI-assisted coding within a workshop. It installs the Kiro CLI tools, persists user configurations and credentials on the host inside `/home/workshop/.kiro` to speed up authentication and preserve settings across workshop updates, and configures environment variables on launch.
+This SDK provides the Kiro CLI for AI-assisted coding within a workshop. It installs the Kiro CLI, persists Kiro's configuration (`/home/workshop/.kiro`) and its login tokens and local database (`/home/workshop/.local/share/kiro-cli`) on the host so that authentication and settings survive workshop updates, and configures environment variables on launch.
 
 ---
 
@@ -27,7 +27,7 @@ This demonstrates a basic Kiro setup ready for AI-assisted coding inside the wor
 
 1. No prerequisite SDKs are required.
 2. Place your project files in your project directory. Kiro works with any codebase layout.
-3. On launch, the SDK configures the system `PATH` to include `kiro-cli`, `kiro-cli-chat`, and `kiro-cli-term`, sets `KIRO_HOME=/home/workshop/.kiro`, and installs a default system prompt to instruct Kiro on containerized environment constraints.
+3. On launch, the SDK configures the system `PATH` to include `kiro-cli`, sets `KIRO_HOME=/home/workshop/.kiro`, and installs a global steering file (`~/.kiro/steering/workshop-prompt.md`) to instruct Kiro on containerized environment constraints.
 
 ### Start a coding session
 
@@ -51,7 +51,7 @@ To log in to your Kiro account:
 kiro-cli login
 ```
 
-Your authentication tokens, settings, and local profiles are saved inside `/home/workshop/.kiro` and are preserved across workshop updates.
+Your settings, agents, and steering files are saved inside `/home/workshop/.kiro`, and your authentication tokens inside `/home/workshop/.local/share/kiro-cli`. Both are preserved across workshop updates.
 
 ---
 
@@ -61,13 +61,19 @@ Your authentication tokens, settings, and local profiles are saved inside `/home
 
 - Interface: `mount`
 - Workshop target: `/home/workshop/.kiro`
-- Purpose: Preserves Kiro configurations, credentials, and settings between workshop updates. You can also remount this folder to your host's existing `~/.kiro` folder:
+- Purpose: Preserves Kiro configuration (settings, agents, steering files, sessions) between workshop updates. You can also remount this folder to your host's existing `~/.kiro` folder:
 
   ```bash
   workshop stop my-kiro-app
   workshop remount my-kiro-app/kiro:kiro-config ~/.kiro
   workshop start my-kiro-app
   ```
+
+### `kiro-data`
+
+- Interface: `mount`
+- Workshop target: `/home/workshop/.local/share/kiro-cli`
+- Purpose: Preserves Kiro's local database, which holds the login tokens, between workshop updates, so you don't have to run `kiro-cli login` again after a `workshop refresh`.
 
 ## Slots (resources this SDK provides)
 

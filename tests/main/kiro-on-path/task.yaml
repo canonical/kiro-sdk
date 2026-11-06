@@ -10,9 +10,14 @@ restore: |
 execute: |
   # `workshop exec` runs as the `workshop` user with a login shell,
   # which is what setup-base configures via /etc/profile.d/kiro-sdk.sh.
+  # Kiro 3.x ships a single binary; kiro-cli-chat and kiro-cli-term are gone.
   workshop exec -- bash -lc 'command -v kiro-cli' | MATCH "/kiro-cli$"
-  workshop exec -- bash -lc 'command -v kiro-cli-chat' | MATCH "/kiro-cli-chat$"
-  workshop exec -- bash -lc 'command -v kiro-cli-term' | MATCH "/kiro-cli-term$"
+  # Guard against stale 2.x binaries leaking into the SDK from a reused
+  # build environment.
+  if workshop exec -- bash -lc 'command -v kiro-cli-chat || command -v kiro-cli-term'; then
+    echo "unexpected 2.x binaries found in the SDK" >&2
+    exit 1
+  fi
 
 debug: |
   workshop exec -- bash -lc 'echo PATH=$PATH' || true
