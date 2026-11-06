@@ -1,0 +1,28 @@
+summary: Kiro's config and data directories are persisted mounts owned by the workshop user
+
+prepare: |
+  envsubst '${BASE}' <workshop.yaml.in >workshop.yaml
+  workshop launch
+
+restore: |
+  workshop remove || true
+
+execute: |
+  # Both plugs must be mounted from the host, so logins and settings survive
+  # a workshop refresh.
+  workshop exec -- findmnt /home/workshop/.kiro
+  workshop exec -- findmnt /home/workshop/.local/share/kiro-cli
+
+  # The workshop user must own the mounts and the parents of the data mount.
+  for dir in .kiro .local .local/share .local/share/kiro-cli; do
+    workshop exec -- stat -c '%U' "/home/workshop/$dir" | MATCH "^workshop$"
+  done
+
+  # Kiro creates its database (which holds the login tokens) in the data
+  # mount the first time it runs. `whoami` exits non-zero when logged out.
+  workshop exec -- bash -lc 'kiro-cli whoami' || true
+  workshop exec -- test -s /home/workshop/.local/share/kiro-cli/data.sqlite3
+
+debug: |
+  workshop exec -- findmnt || true
+  workshop exec -- ls -la /home/workshop /home/workshop/.local /home/workshop/.local/share /home/workshop/.local/share/kiro-cli || true
